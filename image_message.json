@@ -1,0 +1,42 @@
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "128907026972878",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "15550546312",
+                            "phone_number_id": "141171545737498"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "Amaru"
+                                },
+                                "wa_id": "51987501744"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "51987501744",
+                                "id": "wamid.HBgLNTE5ODc1MDE3NDQVAgASGBI1QTYwMDdFRjkyODg0RUFFREMA",
+                                "timestamp": "1695412862",
+                                "type": "image",
+                                "image": {
+                                    "caption": "asdfasdf",
+                                    "mime_type": "image/jpeg",
+                                    "sha256": "y19rMCMsdO9I46WsFjNFG7EqUV9ZoqTB24Ji/DaYJEM=",
+                                    "id": "1339078660031345"
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
