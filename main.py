@@ -50,7 +50,33 @@ async def webhook_endpoint(request: Request):
                 message = messenger.get_message(data)
                 name = messenger.get_name(data)
                 logging.info("Message: %s", message)
-                messenger.send_message(f"Hi {name}, nice to connect with you", mobile)
+                if "hola" in message.lower():
+                    messenger.send_message(f"Hola {name}, soy GlowGPT, mándame una selfie para darte recomendaciones de productos!", mobile)
+                else:
+                    # Talk with the user about its preferences
+                    response = process_text_message_from_phone_number(message, mobile)
+                    logging.info(f"OpenAI Response: {response}")
+                    messenger.send_message(response, mobile)
+                    messenger.send_reply_button(
+                        recipient_id=mobile,
+                        button={
+                            "type": "button",
+                            "body": {
+                                "text": "Recuerda que puedes descargar tu catálogo en cualquier momento."
+                            },
+                            "action": {
+                                "buttons": [
+                                    {
+                                        "type": "reply",
+                                        "reply": {
+                                            "id": "generate_catalogue",
+                                            "title": "Genera tu catálogo"
+                                        }
+                                    },
+                                ]
+                            }
+                    },
+                    )
 
             elif message_type == "interactive":
                 message_response = messenger.get_interactive_response(data)
@@ -63,16 +89,19 @@ async def webhook_endpoint(request: Request):
                     # DO generate catalogue
                     messenger.send_message("Dame un momento...", mobile)
                     catalogue_body = retrieve_recommendations_for_catalogue(mobile)
-                    generate_catalogue(catalogue_body)
-                    restart_recommendations_for_number(mobile)
-                    messenger.send_message("Aquí está tu catálogo!", mobile)
-                    # Send a pptx file
-                    media_id = messenger.upload_media(media='catalogue.pptx')['id']
-                    messenger.send_document(
-                        document=media_id,
-                        recipient_id=mobile,
-                        link=False,
-                    )
+                    if len(catalogue_body) > 0:
+                        generate_catalogue(catalogue_body)
+                        restart_recommendations_for_number(mobile)
+                        messenger.send_message("Aquí está tu catálogo!", mobile)
+                        # Send a pptx file
+                        media_id = messenger.upload_media(media='catalogue.pptx')['id']
+                        messenger.send_document(
+                            document=media_id,
+                            recipient_id=mobile,
+                            link=False,
+                        )
+                    else:
+                        messenger.send_message("No tienes recomendaciones, envíame una selfie o haz una pregunta para recomendarte productos!", mobile)
 
             elif message_type == "location":
                 message_location = messenger.get_location(data)
@@ -100,7 +129,7 @@ async def webhook_endpoint(request: Request):
                     color = OpenAIChat.get_response([msg])
                     open_ai_resp = process_text_message_from_phone_number(f"Que me recomiendas para mi color de piel {color}?", mobile)
                     logging.info(f"OpenAI Response: {open_ai_resp}")
-                    # messenger.send_message(open_ai_resp, mobile)
+                    messenger.send_message(open_ai_resp, mobile)
                     messenger.send_reply_button(
                         recipient_id=mobile,
                         button={
