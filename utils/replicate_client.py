@@ -6,7 +6,7 @@ load_dotenv()
 MODEL_ID = str(os.getenv("MODEL_ID"))
 
 class ImageEvaluator:
-    def __init__(self, model_id):
+    def __init__(self, model_id=MODEL_ID):
         self.model_id = model_id
         
     def evaluate_image(self, image_path):
@@ -35,7 +35,7 @@ class ImageEvaluator:
         return output.lower()
 
 if __name__ == "__main__":
-    evaluator = ImageEvaluator(MODEL_ID)
+    evaluator = ImageEvaluator()
     is_face = evaluator.evaluate_image("test_image.png")
     print(f"Is a face? : {is_face}")
     response = evaluator.ask_question("test_image.png", "what is his hair color?")
