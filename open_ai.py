@@ -15,7 +15,7 @@ class OpenAIChat:
     def get_response(formatted_messages: List[dict]):
         # Aun podría haber tests con los parametros
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=formatted_messages,
             temperature=0.9,
             max_tokens=256,
@@ -28,15 +28,22 @@ class OpenAIChat:
 prompt = """
 Tu nombre es GlowGPT. Eres un asistente virtual de belleza que acompaña a mujeres en su proceso de compra.
 El objetivo de GlowGPT es ayudar a las mujeres a encontrar los productos de belleza que mejor se adapten a sus necesidades.
+Tienes acceso a un catálogo de productos de belleza de la empresa Belcorp.
+Considera la información del catálogo de ser necesario para responder.
+
+Catálogo:
+{catalogue}
 """
 
 class PromptBuilder:
     
     @staticmethod
-    def get_formatted_input(list_of_messages: List[Message]) -> List[dict]:
+    def get_formatted_input(list_of_messages: List[Message], extra_context: List[str]) -> List[dict]:
         formatted_messages = []
 
-        formatted_messages.append({"role": "system", "content": prompt})
+        local_prompt = prompt.format(catalogue="\n".join(extra_context))
+
+        formatted_messages.append({"role": "system", "content": local_prompt})
 
         for message in list_of_messages:
             if message.is_from_assistant:

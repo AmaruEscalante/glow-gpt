@@ -1,46 +1,27 @@
-from open_ai import PromptBuilder, OpenAIChat, SalesPitchBuilder
+from open_ai import PromptBuilder, OpenAIChat, SalesPitchBuilder, Embedding
 from entities import Message
 from db_client import DBClient
-
+from vector_db import LongTermMemoryService
+import csv
 # formatted_messages = PromptBuilder.get_formatted_input(messages)
 # response = OpenAIChat.get_response(formatted_messages)
-"""
+
 mongo_client = DBClient()
+
+mongo_client.delete_messsages_with_phone_number("51970748423")
 
 while True:
     input_message = input("Usuario: ")
+    query_embedding = Embedding.encode(input_message)
+    response = LongTermMemoryService.retrieve(input_message)
+    id_matches = [match['id'] for match in response['matches']]
+    print(id_matches)
+    sales_pitch = mongo_client.retrieve_sales_pitches_with_cod_saps(id_matches)
+    print("Related sales pitches", sales_pitch)
     new_message = Message("51970748423", input_message, False)
     mongo_client.upsert_message(new_message)
     messages = mongo_client.retrieve_messages_with_phone_number("51970748423")
-    formatted_messages = PromptBuilder.get_formatted_input(messages)
+    formatted_messages = PromptBuilder.get_formatted_input(messages, extra_context=sales_pitch)
     response = OpenAIChat.get_response(formatted_messages)
     print("GlowGPT: ", response)
     mongo_client.upsert_message(Message("51970748423", response, True))
-"""
-
-import pandas as pd
-
-# Leer el archivo CSV
-df = pd.read_csv('products_curated_updated.csv')  # Asegúrate de que la ruta al archivo CSV sea correcta
-
-# Crear un nuevo DataFrame para almacenar los resultados
-sales_pitch_df = pd.DataFrame(columns=['codsap', 'sales_pitch'])
-
-# Iterar sobre las filas del DataFrame original
-for index, row in df.iterrows():
-    # Extraer los valores de las columnas específicas y asignarlas a variables
-    cod = row['codsap']
-    product = row['desproducto']
-    group = row['desunidadnegocio']
-    brand = row['desmarca']
-    category = row['descategoria']
-    
-    # Obtener el sales pitch y la respuesta
-    formatted_messages = SalesPitchBuilder.get_sales_pitch(product, group, category, brand)
-    response = OpenAIChat.get_response(formatted_messages)
-    
-    # Añadir una nueva fila al DataFrame de sales_pitch
-    sales_pitch_df = sales_pitch_df.append({'codsap': cod, 'sales_pitch': response}, ignore_index=True)
-
-# Guardar el DataFrame de sales_pitch en un nuevo archivo CSV
-sales_pitch_df.to_csv('sales_pitch.csv', index=False, encoding='utf-8-sig')

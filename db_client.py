@@ -49,3 +49,24 @@ class DBClient:
         db = self.client.belcorp
         collection = db.messages
         collection.delete_many({"phone_number": phone_number})
+
+    
+    def upsert_sales_pitch(self, cod_sap: str, sales_pitch: str):
+        db = self.client.belcorp
+        collection = db.sales_pitch
+        result = collection.insert_one(
+            {
+                "cod_sap": cod_sap,
+                "sales_pitch": sales_pitch,
+            }
+        )
+        print(result)
+
+    def retrieve_sales_pitches_with_cod_saps(self, cod_saps: List[str]) -> List[str]:
+        db = self.client.belcorp
+        collection = db.sales_pitch
+        documents = collection.find({"cod_sap": {"$in": cod_saps}})
+
+        sales_pitches = [doc["sales_pitch"] for doc in documents]
+
+        return sales_pitches
