@@ -5,4 +5,5 @@ python-dotenv
 openai
 pymongo
 replicate
+heyoo
 pinecone-client==2.2.2
