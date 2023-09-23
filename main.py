@@ -102,7 +102,7 @@ async def webhook_endpoint(request: Request):
                     logging.info(f"OpenAI Response: {open_ai_resp}")
                     # messenger.send_message(open_ai_resp, mobile)
                     messenger.send_reply_button(
-                        recipient_id="51987501744",
+                        recipient_id=mobile,
                         button={
                             "type": "button",
                             "body": {
