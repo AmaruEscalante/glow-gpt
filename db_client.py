@@ -98,8 +98,9 @@ class DBClient:
         db = self.client.belcorp
         collection = db.recommendations
         documents = [{"phone_number": phone_number, "cod_sap": recommendation["cod_sap"]} for recommendation in recommendations]
-        result = collection.insert_many(documents)
-        print(result)
+        if len(documents) > 0:
+            result = collection.insert_many(documents)
+            print(result)
 
     def retrieve_recommendations(self, phone_number: str) -> List[str]:
         db = self.client.belcorp
