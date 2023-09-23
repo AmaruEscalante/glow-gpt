@@ -6,8 +6,12 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import Any
 from heyoo import WhatsApp
+from open_ai import OpenAIChat
 from utils.replicate_client import ImageEvaluator
+from utils.ppt_client import generate_catalogue
 import logging
+from mvp import process_text_message_from_phone_number, retrieve_recommendations_for_catalogue, restart_recommendations_for_number
+
 
 class WebhookEvent(BaseModel):
     data: Any
@@ -54,6 +58,21 @@ async def webhook_endpoint(request: Request):
                 message_id = message_response[interactive_type]["id"]
                 message_text = message_response[interactive_type]["title"]
                 logging.info(f"Interactive Message; {message_id}: {message_text}")
+                # If interactive type id is "generate_catalogue"
+                if message_id == "generate_catalogue":
+                    # DO generate catalogue
+                    messenger.send_message("Dame un momento...", mobile)
+                    catalogue_body = retrieve_recommendations_for_catalogue(mobile)
+                    generate_catalogue(catalogue_body)
+                    restart_recommendations_for_number(mobile)
+                    messenger.send_message("Aquí está tu catálogo!", mobile)
+                    # Send a pptx file
+                    media_id = messenger.upload_media(media='catalogue.pptx')['id']
+                    messenger.send_document(
+                        document=media_id,
+                        recipient_id=mobile,
+                        link=False,
+                    )
 
             elif message_type == "location":
                 message_location = messenger.get_location(data)
@@ -71,13 +90,37 @@ async def webhook_endpoint(request: Request):
                 if awns: # is a person
                     messenger.send_message("Gracias! por enviarnos tu foto, dame un momento para analizarla", mobile)
                     # analyze image
-                    hair_color = image_evaluator.ask_question(image_filename, "what is his hair color?")
-                    race = image_evaluator.ask_question(image_filename, "what is his race?")
-                    eye_color = image_evaluator.ask_question(image_filename, "what is his eye color?")
-                    messenger.send_message(f"El color de su cabello es: {hair_color}", mobile)
-                    messenger.send_message(f"Su raza es: {race}", mobile)
-                    messenger.send_message(f"El color de sus ojos es: {eye_color}", mobile)
-                    
+                    # hair_color = image_evaluator.ask_question(image_filename, "what is their hair color?")
+                    skin_color = image_evaluator.ask_question(image_filename, "what is their skin color?")
+                    # eye_color = image_evaluator.ask_question(image_filename, "what is their eye color?")
+                    # messenger.send_message(f"El color de su cabello es: {hair_color}", mobile)
+                    # messenger.send_message(f"El color de su piel: {skin_color}", mobile)
+                    # messenger.send_message(f"El color de sus ojos es: {eye_color}", mobile)
+                    msg = {"role": "user", "content": f"Translate this color to spanish: {skin_color}, just give me the name of the color in one word in lowercase without points"}
+                    color = OpenAIChat.get_response([msg])
+                    open_ai_resp = process_text_message_from_phone_number(f"Que me recomiendas para mi color de piel {color}?", mobile)
+                    logging.info(f"OpenAI Response: {open_ai_resp}")
+                    # messenger.send_message(open_ai_resp, mobile)
+                    messenger.send_reply_button(
+                        recipient_id=mobile,
+                        button={
+                            "type": "button",
+                            "body": {
+                                "text": "Genial! Para ver tus recomendaciones descarga tu catálogo."
+                            },
+                            "action": {
+                                "buttons": [
+                                    {
+                                        "type": "reply",
+                                        "reply": {
+                                            "id": "generate_catalogue",
+                                            "title": "Genera tu catálogo"
+                                        }
+                                    },
+                                ]
+                            }
+                    },
+                    )
                 else:
                     messenger.send_message("Por favor, intenta con otra imagen.", mobile)
                     
@@ -116,34 +159,6 @@ async def webhook_endpoint(request: Request):
             else:
                 logging.info("No new message")
     return "OK", 200
-
-    # if body.get("object"):
-    #     entry = body.get("entry", [{}])[0]
-    #     changes = entry.get("changes", [{}])[0]
-    #     value = changes.get("value", {})
-    #     messages = value.get("messages", [{}])[0]
-
-    #     if value and messages:
-    #         phone_number_id = value.get("metadata", {}).get("phone_number_id")
-    #         from_ = messages.get("from")
-    #         msg_body = messages.get("text", {}).get("body")
-
-    #         if phone_number_id and from_ and msg_body:
-    #             async with httpx.AsyncClient() as client:
-    #                 response = await client.post(
-    #                     f"https://graph.facebook.com/v12.0/{phone_number_id}/messages?access_token={WHATSAPP_TOKEN}",
-    #                     json={
-    #                         "messaging_product": "whatsapp",
-    #                         "to": from_,
-    #                         "text": {"body": "Ack: " + msg_body},
-    #                     },
-    #                     headers={"Content-Type": "application/json"},
-    #                 )
-    #                 response.raise_for_status()
-
-    #     return {"status": "ok"}
-    # else:
-    #     raise HTTPException(status_code=404, detail="Not from WhatsApp API")
 
 @app.get("/webhook/")
 def verify_webhook(request: Request):
