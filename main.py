@@ -1,5 +1,6 @@
 from email.mime import image
 from fastapi import FastAPI, Request, HTTPException, Depends, Body, Response
+from starlette.middleware.cors import CORSMiddleware
 import httpx
 import os
 from dotenv import load_dotenv
@@ -189,6 +190,18 @@ async def webhook_endpoint(request: Request):
                 logging.info("No new message")
     return "OK", 200
 
+@app.get("/chat")
+def chat_web(request: Request):
+    query_params = request.query_params
+    user_id = query_params.get("user_id")
+    message = query_params.get("message")
+    if user_id and message:
+        response = process_text_message_from_phone_number(message, user_id)
+        return {
+            "message": response
+        }
+    raise HTTPException(status_code=403, detail="Missing user_id or message")
+
 @app.get("/webhook/")
 def verify_webhook(request: Request):
 
@@ -203,6 +216,14 @@ def verify_webhook(request: Request):
         return Response(challenge, media_type="text/plain")
     else:
         raise HTTPException(status_code=403, detail="Tokens do not match")
+
+app = CORSMiddleware(
+    app=app,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "PUT", "POST", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+)
 
 if __name__ == "__main__":
     import uvicorn
