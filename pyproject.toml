@@ -12,6 +12,8 @@ fastapi = "^0.103.1"
 uvicorn = "^0.23.2"
 httpx = "^0.25.0"
 python-dotenv = "^1.0.0"
+openai = "^0.28.0"
+pymongo = "^4.5.0"
 
 
 [build-system]
