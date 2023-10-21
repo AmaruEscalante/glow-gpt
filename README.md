@@ -4,7 +4,7 @@ GlowGPT is an agent that helps you with any cosmetic product you want to buy. Ta
 <!-- Embedd a video from the local path which is in demo-glowgpt.mp4 -->
 <div style="text-align:center">
 <video width="420" height="540" controls>
-  <source src="demo-glowgpt.mp4" type="video/mp4">
+  <source src="https://raw.githubusercontent.com/AmaruEscalante/glow-gpt/main/demo-glowpt.mp4" type="video/mp4">
 Your browser does not support the video tag.
 </video>
 </div>
